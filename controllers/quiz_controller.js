@@ -14,11 +14,18 @@ exports.load = function(req, res, next, quizId) {
 
 // GET /quizes
 exports.index = function(req, res) {
-  models.Quiz.findAll().then(
-    function(quizes) {
-      res.render('quizes/index', { quizes: quizes});
-    }
-  ).catch(function(error) { next(error);})
+  if(req.query.search && req.query.search!=''){
+    var search = '%' + req.query.search.replace(/\s/ig, '%') + '%';
+		models.Quiz.findAll({where:["LOWER(pregunta) LIKE LOWER(?) ORDER BY LOWER(pregunta)", search]}).then(function(quizes) {
+		    res.render('quizes/index', {quizes: quizes});
+		}).catch(function(error) { next(error);});
+  }else{
+    models.Quiz.findAll().then(
+      function(quizes) {
+        res.render('quizes/index', { quizes: quizes});
+      }
+    ).catch(function(error) { next(error);})
+  }
 };
 
 // GET /quizes/:id
@@ -29,7 +36,7 @@ exports.show = function(req, res) {
 // GET /quizes/:id/answer
 exports.answer = function(req, res) {
   var resultado = 'Incorrecto';
-  if (req.query.respuesta === req.quiz.respuesta) {
+  if (req.query.respuesta.toLowerCase() === req.quiz.respuesta.toLowerCase()) {
     resultado = 'Correcto';
   }
   res.render('quizes/answer', {quiz: req.quiz, respuesta: resultado});
